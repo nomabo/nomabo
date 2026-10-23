@@ -1,6 +1,8 @@
 """Une fenêtre festive : ton texte, des feux d'artifice et des chats qui dansent."""
 
+import base64
 import colorsys
+import io
 import math
 import random
 import tkinter as tk
@@ -39,8 +41,31 @@ def _arc_en_ciel(t):
     return "#%02x%02x%02x" % (int(r * 255), int(g * 255), int(b * 255))
 
 
+def _image_latex(texte, taille, couleur):
+    """Transforme un texte LaTeX en image PNG (encodée en base64) avec matplotlib."""
+    # Import ici : matplotlib n'est chargé que si on utilise le LaTeX
+    import matplotlib
+    from matplotlib import patheffects
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
+    from matplotlib.figure import Figure
+
+    with matplotlib.rc_context({"mathtext.fontset": "cm"}):
+        fig = Figure(figsize=(0.01, 0.01), dpi=100)
+        FigureCanvasAgg(fig)
+        fig.text(0, 0, texte, fontsize=taille, color=couleur,
+                 path_effects=[patheffects.withStroke(linewidth=max(2, taille / 10),
+                                                      foreground="#000000")])
+        tampon = io.BytesIO()
+        try:
+            fig.savefig(tampon, format="png", transparent=True,
+                        bbox_inches="tight", pad_inches=0.15)
+        except ValueError as erreur:
+            raise ValueError(f"Texte LaTeX invalide : {texte!r}\n{erreur}") from None
+    return base64.b64encode(tampon.getvalue()).decode("ascii")
+
+
 class _Fete:
-    def __init__(self, texte, largeur, hauteur, nb_chats, duree):
+    def __init__(self, texte, largeur, hauteur, nb_chats, duree, latex):
         ctk.set_appearance_mode("dark")
         self.fenetre = ctk.CTk()
         self.fenetre.title("C'est la fête !")
@@ -68,15 +93,19 @@ class _Fete:
                                             fill="#ffffff", outline="")
             self.etoiles.append((ident, random.uniform(0, 2 * math.pi)))
 
-        # Texte (avec une ombre)
-        self.taille_texte = max(22, min(64, int(largeur / max(len(texte), 1) * 1.4)))
-        police = ("Helvetica", self.taille_texte, "bold")
-        self.ombre = self.canvas.create_text(largeur / 2 + 3, hauteur * 0.3 + 3,
-                                             text=texte, fill="#000000", font=police,
-                                             width=largeur - 60, justify="center")
-        self.texte = self.canvas.create_text(largeur / 2, hauteur * 0.3,
-                                             text=texte, fill="#ffffff", font=police,
-                                             width=largeur - 60, justify="center")
+        # Texte
+        self.latex = latex
+        if latex:
+            self._preparer_latex(texte)
+        else:
+            self.taille_texte = max(22, min(64, int(largeur / max(len(texte), 1) * 1.4)))
+            police = ("Helvetica", self.taille_texte, "bold")
+            self.ombre = self.canvas.create_text(largeur / 2 + 3, hauteur * 0.3 + 3,
+                                                 text=texte, fill="#000000", font=police,
+                                                 width=largeur - 60, justify="center")
+            self.texte = self.canvas.create_text(largeur / 2, hauteur * 0.3,
+                                                 text=texte, fill="#ffffff", font=police,
+                                                 width=largeur - 60, justify="center")
 
         # Chats
         self.echelle = max(0.5, min(1.2, largeur / (nb_chats + 1) / 120))
@@ -99,9 +128,30 @@ class _Fete:
         self._boucle()
         self.fenetre.mainloop()
 
+    def _preparer_latex(self, texte, nb_images=32):
+        """Prépare à l'avance des images du texte (couleurs et tailles qui varient),
+        car redessiner du LaTeX à chaque image de l'animation serait trop lent."""
+        # On mesure d'abord le texte pour qu'il tienne dans la fenêtre
+        taille = 40
+        essai = tk.PhotoImage(master=self.canvas, data=_image_latex(texte, taille, "#ffffff"))
+        reduction = min(1.0, (self.L - 60) / essai.width(), (self.H * 0.45) / essai.height())
+        taille = taille * reduction / 1.08  # marge pour la pulsation
+
+        self.images_latex = []
+        for i in range(nb_images):
+            t = i / nb_images
+            pulsation = 1 + 0.08 * math.sin(2 * math.pi * 2 * t)
+            donnees = _image_latex(texte, taille * pulsation, _arc_en_ciel(t))
+            self.images_latex.append(tk.PhotoImage(master=self.canvas, data=donnees))
+        self.texte = self.canvas.create_image(self.L / 2, self.H * 0.3,
+                                              image=self.images_latex[0])
+
     def fermer(self):
         self.actif = False
         try:
+            # Annule les animations en attente pour éviter des messages d'erreur
+            for ident in self.fenetre.tk.call("after", "info"):
+                self.fenetre.after_cancel(ident)
             self.fenetre.destroy()
         except tk.TclError:
             pass
@@ -288,11 +338,15 @@ class _Fete:
         self.particules = vivantes
 
         # Texte qui pulse et change de couleur
-        taille = int(self.taille_texte * (1 + 0.08 * math.sin(self.temps * 0.12)))
-        police = ("Helvetica", taille, "bold")
-        c.itemconfig(self.texte, font=police, fill=_arc_en_ciel(self.temps * 0.01))
-        c.itemconfig(self.ombre, font=police)
-        c.tag_raise(self.ombre)
+        if self.latex:
+            image = self.images_latex[(self.temps // 3) % len(self.images_latex)]
+            c.itemconfig(self.texte, image=image)
+        else:
+            taille = int(self.taille_texte * (1 + 0.08 * math.sin(self.temps * 0.12)))
+            police = ("Helvetica", taille, "bold")
+            c.itemconfig(self.texte, font=police, fill=_arc_en_ciel(self.temps * 0.01))
+            c.itemconfig(self.ombre, font=police)
+            c.tag_raise(self.ombre)
         c.tag_raise(self.texte)
 
         # Chats qui dansent
@@ -302,7 +356,8 @@ class _Fete:
             self._dessiner_chat(chat)
 
 
-def fete(texte="Bravo !", largeur=800, hauteur=600, nb_chats=5, duree=None):
+def fete(texte="Bravo !", largeur=800, hauteur=600, nb_chats=5, duree=None,
+         latex=False):
     """Ouvre une fenêtre avec un texte, des feux d'artifice et des chats qui dansent.
 
     texte    : le message à afficher
@@ -310,7 +365,10 @@ def fete(texte="Bravo !", largeur=800, hauteur=600, nb_chats=5, duree=None):
     hauteur  : hauteur de la fenêtre en pixels
     nb_chats : nombre de chats qui dansent
     duree    : si indiqué (en secondes), la fenêtre se ferme toute seule
+    latex    : si True, le texte est interprété comme du LaTeX
+               (les formules s'écrivent entre $...$, par exemple
+               r"$e^{i\\pi} + 1 = 0$" ; pense au r devant les guillemets)
 
     Astuce : clique dans la fenêtre pour lancer un feu d'artifice !
     """
-    _Fete(texte, largeur, hauteur, nb_chats, duree)
+    _Fete(texte, largeur, hauteur, nb_chats, duree, latex)
