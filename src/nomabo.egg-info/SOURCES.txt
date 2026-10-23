@@ -3,6 +3,7 @@ README.md
 pyproject.toml
 src/nomabo/__init__.py
 src/nomabo/fenetre.py
+src/nomabo/fete.py
 src/nomabo/outils.py
 src/nomabo.egg-info/PKG-INFO
 src/nomabo.egg-info/SOURCES.txt
