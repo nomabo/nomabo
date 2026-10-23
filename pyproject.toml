@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nomabo"
+version = "0.1.0"
+description = "Ma bibliothèque Python nomabo"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+dependencies = []
+authors = [{ name = "Ton Nom", email = "toi@exemple.com" }]
+
+[project.urls]
+Homepage = "https://github.com/ton-nom/nomabo"
