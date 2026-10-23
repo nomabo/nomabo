@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: nomabo
-Version: 0.1.0
+Version: 0.1.1
 Summary: Ma bibliothèque Python nomabo
 Author-email: Ton Nom <toi@exemple.com>
 License: MIT License
@@ -29,6 +29,7 @@ Project-URL: Homepage, https://github.com/ton-nom/nomabo
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
 License-File: LICENSE
+Requires-Dist: customtkinter>=5.2
 Dynamic: license-file
 
 # nomabo
