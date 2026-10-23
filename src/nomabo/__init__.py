@@ -1,6 +1,7 @@
 """nomabo : ma bibliothèque Python."""
 
-from .outils import saluer, aire_cercle
+from .outils import *
+from .fenetre import *
 
-__version__ = "0.1.0"
-__all__ = ["saluer", "aire_cercle"]
+__version__ = "0.1.1"
+__all__ = ["ouvrir_fenetre"]
