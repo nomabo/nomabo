@@ -1,11 +1,11 @@
 Metadata-Version: 2.4
 Name: nomabo
-Version: 0.1.4
+Version: 0.1.6
 Summary: Ma bibliothèque Python nomabo
-Author-email: Ton Nom <toi@exemple.com>
+Author-email: Nomabo <nomabo.society@gmail.com>
 License: MIT License
         
-        Copyright (c) 2026 Ton Nom
+        Copyright (c) 2026 Nomabo
         
         Permission is hereby granted, free of charge, to any person obtaining a copy
         of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,7 @@ Requires-Python: >=3.9
 Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: customtkinter>=5.2
+Requires-Dist: matplotlib
 Dynamic: license-file
 
 # nomabo

@@ -10,7 +10,7 @@ import tkinter as tk
 import customtkinter as ctk
 
 # Seule la fonction "fete" est exportée par "from .fete import *"
-__all__ = ["fete"]
+__all__ = ["party"]
 
 _FOND = "#0b0b1e"
 _COULEURS_FEU = ["#ff4d6d", "#ffd166", "#06d6a0", "#4cc9f0",
@@ -356,7 +356,7 @@ class _Fete:
             self._dessiner_chat(chat)
 
 
-def fete(texte="Bravo !", largeur=800, hauteur=600, nb_chats=5, duree=None,
+def party(texte="Bravo !", largeur=800, hauteur=600, nb_chats=5, duree=None,
          latex=False):
     """Ouvre une fenêtre avec un texte, des feux d'artifice et des chats qui dansent.
 
